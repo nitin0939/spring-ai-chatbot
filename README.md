@@ -200,9 +200,9 @@ POST /ask
 
 ## 📸 Screenshots
 
-![API Response](ScreenShot1.png)
-![System Prompt](ScreenShot2.png)
-![Error Handling](ScreenShot3.png)
+![API Response](Screenshot1.png)
+![System Prompt](Screenshot2.png)
+![Error Handling](Screenshot3.png)
 
 ---
 
