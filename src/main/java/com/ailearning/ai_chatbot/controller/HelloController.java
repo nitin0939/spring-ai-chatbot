@@ -15,8 +15,8 @@ import com.ailearning.ai_chatbot.DTO.ChatResponse;
 @RestController
 public class HelloController {
 	private final ChatClient chatClient;
-	
-	public HelloController(@Value("${spring.ai.openai.api-key}")String apiKey) {
+
+    public HelloController(@Value("${spring.ai.openai.api-key}")String apiKey) {
 		
 		//Groq API setup
 		OpenAiApi groqApi = new OpenAiApi("https://api.groq.com/openai",apiKey);
