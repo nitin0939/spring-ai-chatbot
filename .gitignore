@@ -33,3 +33,6 @@ build/
 .vscode/
 
 application.properties
+
+### Frontend (built into src/main/resources/static by `npm run build`) ###
+src/main/resources/static/

@@ -1,60 +1,125 @@
-# 🤖 AI Chatbot REST API
+# AI Chatbot
 
-A production-ready REST API integrating Spring Boot with Groq's FREE LLaMA 3.1 AI model.
+A Spring Boot REST API that answers questions using Groq's LLaMA 3.1 model (via the OpenAI-compatible API), with a bundled React chat UI.
 
----
+## Tech stack
 
-## ⚡ Quick Facts
+| Component     | Technology                          |
+|---------------|--------------------------------------|
+| Language      | Java 21                              |
+| Backend       | Spring Boot 3.5.16, Spring AI 1.0.0-M6 |
+| AI provider   | Groq (`llama-3.1-8b-instant`)        |
+| Frontend      | React + Vite                         |
+| Build         | Maven (frontend build wired in via `frontend-maven-plugin`) |
 
-- **Language:** Java 21
-- **Framework:** Spring Boot 3.5.16 + Spring AI
-- **AI Model:** Groq LLaMA 3.1 (FREE)
-- **Architecture:** Modular Monolith
-- **Status:** ✅ Production Ready
+## Project structure
 
----
+```
+src/main/java/com/ailearning/ai_chatbot/
+  controller/HelloController.java     # POST /ask endpoint
+  DTO/ChatRequest.java                # request body: question, systemPrompt
+  DTO/ChatResponse.java               # response body: answer, model, timestamp, ...
+  exception/GlobalExceptionHandler.java
+  exception/ErrorResponse.java
 
-## 🎯 What It Does
+frontend/                             # React + Vite chat UI
+  src/App.jsx                         # chat window, calls POST /ask
+  vite.config.js                      # dev proxy to :8080, builds into static/
 
-Ask questions → AI answers using LLaMA 3.1 → Get JSON response
+src/main/resources/static/            # generated frontend build output (git-ignored)
+```
 
+## Prerequisites
+
+- Java 21
+- A free [Groq API key](https://console.groq.com)
+- Node/npm are **not** required manually — Maven downloads an isolated Node 22 automatically during the build.
+
+## Setup
+
+Create `src/main/resources/application.properties` (git-ignored, so this step is per-machine) with:
+
+```properties
+spring.ai.openai.api-key=YOUR_GROQ_API_KEY
+```
+
+## Running the app
+
+The simplest way — this builds the frontend automatically and starts the API:
+
+```bash
+./mvnw spring-boot:run
+```
+
+Open **http://localhost:8080** for the chat UI.
+
+Or build a standalone jar:
+
+```bash
+./mvnw clean package
+java -jar target/ai-chatbot-0.0.1-SNAPSHOT.jar
+```
+
+### Frontend development (hot reload)
+
+Only needed if you're actively editing the UI:
+
+```bash
+# terminal 1
+./mvnw spring-boot:run
+
+# terminal 2
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173** — Vite hot-reloads UI changes and proxies `/ask` requests to the backend on port 8080.
+
+## API reference
+
+### `POST /ask`
+
+**Request**
+```json
+{
+  "question": "What is Spring Boot?",
+  "systemPrompt": "Optional custom system prompt"
+}
+```
+`systemPrompt` defaults to a Java/Spring Boot backend assistant persona if omitted.
+
+**Response — 200 OK**
 ```json
 {
   "question": "What is Spring Boot?",
   "answer": "Spring Boot is...",
   "model": "llama-3.1-8b-instant",
+  "systemPrompt": "You are a helpful AI assistant...",
+  "answerLength": 187,
   "timestamp": 1719754800000
 }
 ```
 
----
-
-## 🚀 30-Second Setup
-
-### 1. Get Groq API Key (FREE)
-```
-→ console.groq.com
-→ Sign up with Google
-→ Copy API key
+**Response — 400 Bad Request** (e.g. empty question)
+```json
+{
+  "error": "BAD_REQUEST",
+  "message": "Question cannot be empty",
+  "timestamp": 1719754800000
+}
 ```
 
-### 2. Set Environment Variable
+**Response — 500 Internal Server Error** (e.g. upstream Groq failure)
+```json
+{
+  "error": "ERROR",
+  "message": "...",
+  "timestamp": 1719754800000
+}
 ```
-GROQ_API_KEY=gsk_your_key
-```
 
-### 3. Run App
-```bash
-mvn spring-boot:run
-```
-
-**Done!** App runs on `localhost:8080`
-
----
-
-## 📡 API Usage
-
-### POST /ask
+### Example
 
 ```bash
 curl -X POST http://localhost:8080/ask \
@@ -62,176 +127,11 @@ curl -X POST http://localhost:8080/ask \
   -d '{"question": "What is Maven?"}'
 ```
 
-### Request
-```json
-{
-  "question": "Your question",
-  "systemPrompt": "Optional: Your custom prompt"
-}
-```
-
-### Response (200 OK)
-```json
-{
-  "question": "Your question",
-  "answer": "AI generated answer...",
-  "model": "llama-3.1-8b-instant",
-  "systemPrompt": "Used system prompt",
-  "timestamp": 1719754800000,
-  "answerLength": 1245
-}
-```
-
-### Error Response (400/500)
-```json
-{
-  "error": "VALIDATION_ERROR",
-  "message": "Question cannot be empty",
-  "timestamp": 1719754800000
-}
-```
-
----
-
-## 🏗️ Architecture
-
-```
-controller/
-  └── HelloController.java
-
-dto/
-  ├── ChatRequest.java
-  └── ChatResponse.java
-
-exception/
-  ├── ErrorResponse.java
-  └── GlobalExceptionHandler.java
-```
-
-**Why this structure?**
-- ✅ Clear separation of concerns
-- ✅ Easy to test & maintain
-- ✅ Professional architecture
-- ✅ Scalable design
-
----
-
-## 🧪 Quick Test
-
-**Test 1: Default Prompt**
-```json
-POST /ask
-{
-  "question": "What is Java?"
-}
-```
-
-**Test 2: Custom Prompt**
-```json
-POST /ask
-{
-  "question": "Explain microservices",
-  "systemPrompt": "You are an architecture expert"
-}
-```
-
-**Test 3: Error Handling**
-```json
-POST /ask
-{
-  "question": ""
-}
-→ Returns: "Question cannot be empty"
-```
-
----
-
-## 🔒 Security
-
-✅ API key in environment variable (never in code)
-✅ Input validation
-✅ Global exception handling
-✅ No sensitive data in logs
-
----
-
-## 📊 Performance
-
-- Response Time: 1-3 seconds
-- Model Speed: 560 tokens/sec
-- Cost: **FREE**
-- Availability: 99.9%
-
----
-
-## 📚 Tech Stack
-
-| Component | Technology |
-|:---|:---|
-| Language | Java 21 |
-| Framework | Spring Boot 3.5.16 |
-| AI Framework | Spring AI 1.0.0-M6 |
-| AI Model | Groq LLaMA 3.1 8B |
-| Build | Maven |
-
----
-
-## 🎓 What You'll Learn
-
-- Spring Boot REST API design
-- AI/LLM integration in Java
-- System prompts & AI behavior control
-- Modular monolith architecture
-- Error handling best practices
-- Security with environment variables
-
----
-
-## 🔧 Troubleshooting
+## Troubleshooting
 
 | Issue | Fix |
-|:---|:---|
-| Invalid API Key | Restart IDE + verify env var |
-| Question empty | Check JSON - must have non-empty question |
-| 500 Error | Check console logs + internet connection |
-| Connection Refused | Ensure app is running (mvn spring-boot:run) |
-
----
-
-## 📸 Screenshots
-
-![API Response](Screenshot1.png)
-![System Prompt](Screenshot2.png)
-![Error Handling](Screenshot3.png)
-
----
-
-## 💼 Resume Point
-
-> "Built production-ready REST API using Spring Boot + Spring AI integrating Groq's LLaMA 3.1. Implemented modular monolith architecture with comprehensive error handling and security best practices."
-
----
-
-## 🚀 Features
-
-✅ POST REST endpoint
-✅ System prompts support
-✅ JSON request/response
-✅ Error handling
-✅ Environment-based config
-✅ Production-ready code
-✅ Modular architecture
-
----
-
-## 📄 License
-
-MIT - Free to use
-
----
-
-## 👤 Author
-
-**CodeWithPreeti8** - Backend Developer | AI Enthusiast
-
-GitHub: [@CodeWithPreeti8](https://github.com/CodeWithPreeti8)
+|---|---|
+| `401`/invalid API key errors | Check `spring.ai.openai.api-key` in `application.properties` |
+| Connection refused on :8080 | App isn't running — start it with `./mvnw spring-boot:run` |
+| UI shows old content after frontend changes | Rebuild with `npm run build` (or use dev mode on :5173 for hot reload) |
+| Slow first build | Maven is downloading Node 22 for the frontend build — one-time cost |
