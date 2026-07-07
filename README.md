@@ -37,11 +37,13 @@ src/main/resources/static/            # generated frontend build output (git-ign
 
 ## Setup
 
-Create `src/main/resources/application.properties` (git-ignored, so this step is per-machine) with:
+`src/main/resources/application.properties` (git-ignored, so this step is per-machine) resolves the key from an external value:
 
 ```properties
-spring.ai.openai.api-key=YOUR_GROQ_API_KEY
+spring.ai.openai.api-key=${openai.api-key}
 ```
+
+Provide `openai.api-key` either as an environment variable or a JVM system property — see [Running with an environment variable](#running-with-an-environment-variable) below.
 
 ## Running the app
 
@@ -58,6 +60,21 @@ Or build a standalone jar:
 ```bash
 ./mvnw clean package
 java -jar target/ai-chatbot-0.0.1-SNAPSHOT.jar
+```
+
+### Running with an environment variable
+
+`application.properties` expects a property named `openai.api-key`. Shell environment variable names can't contain dots or dashes, so Spring's relaxed binding maps it to `OPENAI_API_KEY`:
+
+```bash
+export OPENAI_API_KEY=YOUR_GROQ_API_KEY
+./mvnw spring-boot:run
+```
+
+If you'd rather keep the exact dotted name instead of the env var translation, pass it as a JVM system property to the forked app process:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Dopenai.api-key=YOUR_GROQ_API_KEY"
 ```
 
 ### Frontend development (hot reload)
@@ -131,7 +148,7 @@ curl -X POST http://localhost:8080/ask \
 
 | Issue | Fix |
 |---|---|
-| `401`/invalid API key errors | Check `spring.ai.openai.api-key` in `application.properties` |
+| `401`/invalid API key errors | Check that `OPENAI_API_KEY` is exported (or `openai.api-key` passed via JVM args) before running |
 | Connection refused on :8080 | App isn't running — start it with `./mvnw spring-boot:run` |
 | UI shows old content after frontend changes | Rebuild with `npm run build` (or use dev mode on :5173 for hot reload) |
 | Slow first build | Maven is downloading Node 22 for the frontend build — one-time cost |
